@@ -1,5 +1,5 @@
 <div align="left" style="position: relative;">
-<img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" align="right" width="30%" style="margin: -20px 0 0 20px;">
+<img src="https://res.cloudinary.com/db0sdo295/image/upload/v1766575004/Gemini_Generated_Image_h5bl03h5bl03h5bl_jhfaf2.png" align="right" width="30%" style="margin: -20px 0 0 20px;">
 <h1>CHILLHUB</h1>
 <p align="left">
 	<em><code>❯ REPLACE-ME</code></em>
