@@ -16,13 +16,19 @@ type Config struct {
 	MinioEndpoint string
 	MinioKey      string
 	MinioSecret   string
-	RawBucket     string
-	HLSBucket     string
-	UseSSL        bool
+
+	MinioUseSSL  bool
+	MinioBaseURL string
+
+	RawBucket string
+	HLSBucket string
 }
+
 
 func Load() Config {
 	_ = godotenv.Load()
+
+	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
 
 	cfg := Config{
 		Port:           os.Getenv("APP_PORT"),
@@ -31,6 +37,8 @@ func Load() Config {
 		MinioEndpoint:  os.Getenv("MINIO_ENDPOINT"),
 		MinioKey:       os.Getenv("MINIO_ACCESS_KEY"),
 		MinioSecret:   os.Getenv("MINIO_SECRET_KEY"),
+		MinioUseSSL:   useSSL,
+		MinioBaseURL:  os.Getenv("MINIO_BASE_URL"),
 		RawBucket:     os.Getenv("MINIO_BUCKET_RAW"),
 		HLSBucket:     os.Getenv("MINIO_BUCKET_HLS"),
 	}
@@ -38,5 +46,11 @@ func Load() Config {
 	if cfg.Port == "" {
 		log.Fatal("APP_PORT is required")
 	}
+
+	if cfg.MinioBaseURL == "" {
+		log.Fatal("MINIO_BASE_URL is required")
+	}
+
 	return cfg
 }
+
