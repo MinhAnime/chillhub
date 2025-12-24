@@ -1,7 +1,6 @@
 <p align="center">
     <img src="https://res.cloudinary.com/db0sdo295/image/upload/v1766575004/Gemini_Generated_Image_h5bl03h5bl03h5bl_jhfaf2.png" align="center" width="30%">
 </p>
-<p align="center"><h1 align="center">CHILLHUB</h1></p>
 <p align="center">
 	<em><code>❯ REPLACE-ME</code></em>
 </p>
