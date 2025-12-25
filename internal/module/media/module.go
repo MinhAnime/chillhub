@@ -16,7 +16,7 @@ type Module struct {
 
 func NewModule(repo repository.MediaRepository, minio *minioshared.Util) *Module {
 
-	transcoder := service.NewTranscodingService()
+	transcoder := service.NewTranscodingService(minio, repo)
 
 
 	// Service nhận minio và bucket riêng
