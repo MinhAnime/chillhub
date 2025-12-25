@@ -6,12 +6,11 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type MediaStatus string
 
 const (
-	StatusInit        MediaStatus = "INIT"
-	StatusUploading   MediaStatus = "UPLOADING"
-	StatusUploaded    MediaStatus = "UPLOADED"
-	StatusTranscoding MediaStatus = "TRANSCODING"
-	StatusReady       MediaStatus = "READY"
-	StatusFailed      MediaStatus = "FAILED"
+	StatusDraft		 = "draft" // Mặc định
+    StatusPending    = "pending"    // Mới upload xong
+    StatusProcessing = "processing" // Đang chạy FFmpeg
+    StatusReady      = "ready"      // Đã có HLS để xem
+    StatusFailed     = "failed"     // Lỗi transcode
 )
 
 type Media struct {

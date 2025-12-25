@@ -2,8 +2,12 @@ package minio
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	appErr "chillhub/internal/shared/error"
@@ -48,9 +52,8 @@ func (u *Util) Upload(
 		},
 	)
 	if err != nil {
-		return nil, appErr.Wrap(
+		return nil, appErr.ErrInternal.WithErr(
 			err,
-			http.StatusInternalServerError,
 			"minio.upload.failed",
 		)
 	}
@@ -75,9 +78,8 @@ func (u *Util) Delete(
 		minio.RemoveObjectOptions{},
 	)
 	if err != nil {
-		return appErr.Wrap(
+		return appErr.ErrInternal.WithErr(
 			err,
-			http.StatusInternalServerError,
 			"minio.delete.failed",
 		)
 	}
@@ -100,9 +102,8 @@ func (u *Util) PresignGet(
 		nil,
 	)
 	if err != nil {
-		return "", appErr.Wrap(
+		return "", appErr.ErrInternal.WithErr(
 			err,
-			http.StatusInternalServerError,
 			"minio.presign.get.failed",
 		)
 	}
@@ -125,9 +126,8 @@ func (u *Util) PresignPut(
 	)
 	if err != nil {
 		print("error: ",err)
-		return "", appErr.Wrap(
+		return "", appErr.ErrInternal.WithErr(
 			err,
-			http.StatusInternalServerError,
 			"minio.presign.put.failed",
 		)
 	}
@@ -143,17 +143,99 @@ func (u *Util) EnsureBucket(
 
 	exists, err := u.storage.cli.BucketExists(ctx, bucket)
 	if err != nil {
-		return appErr.Wrap(err, http.StatusInternalServerError, "minio.bucket.check.failed")
+		return appErr.ErrInternal.WithErr(err, "minio.bucket.check.failed")
 	}
 
 	if exists {
 		return nil
 	}
 
-	err = u.storage.cli.MakeBucket(ctx, bucket, minio.MakeBucketOptions{})
+	err = u.storage.cli.MakeBucket(ctx, bucket, minio.MakeBucketOptions{
+		// Region: "us-east-1", // chỉ bật nếu dùng AWS S3
+	})
 	if err != nil {
-		return appErr.Wrap(err, http.StatusInternalServerError, "minio.bucket.create.failed")
+
+		// Trường hợp bucket vừa được tạo bởi process khác
+		exists, checkErr := u.storage.cli.BucketExists(ctx, bucket)
+		if checkErr == nil && exists {
+			return nil
+		}
+
+		return appErr.ErrInternal.WithErr(err, "minio.bucket.create.failed")
 	}
 
 	return nil
+}
+
+
+func (u *Util) GetObject(ctx context.Context, bucket, object string) (io.ReadCloser, int64, string, error) {
+    obj, err := u.storage.cli.GetObject(ctx, bucket, object, minio.GetObjectOptions{})
+    if err != nil {
+        return nil, 0, "", appErr.ErrNotFound.WithErr(
+			err,
+			"minio.object.not_found",
+		)
+    }
+
+    info, err := obj.Stat()
+    if err != nil {
+        return nil, 0, "", appErr.ErrInternal.WithErr(
+			err,
+			"minio.object.stat_failed",
+		)
+    }
+
+    return obj, info.Size, info.ContentType, nil
+}
+
+
+// UploadFolder tải tất cả file trong folderPath lên MinIO dưới prefix
+func (u *Util) UploadFolder(ctx context.Context, bucket, prefix, folderPath string, excludeFiles ...string) error {
+	files, err := os.ReadDir(folderPath)
+	if err != nil {
+		return err
+	}
+
+	// Tạo map để kiểm tra file loại trừ
+	excludeMap := make(map[string]bool)
+	for _, name := range excludeFiles {
+		excludeMap[name] = true
+	}
+
+	for _, f := range files {
+		// Bỏ qua nếu là folder hoặc nằm trong danh sách loại trừ
+		if f.IsDir() || excludeMap[f.Name()] {
+			continue
+		}
+
+		// Chỉ upload index.m3u8 và các file .ts
+		ext := filepath.Ext(f.Name())
+		if ext != ".m3u8" && ext != ".ts" {
+			continue
+		}
+
+		targetObject := fmt.Sprintf("%s/%s", prefix, f.Name())
+		sourceFile := filepath.Join(folderPath, f.Name())
+
+		// Xác định Content-Type cho HLS
+		contentType := "application/x-mpegURL"
+		if ext == ".ts" {
+			contentType = "video/MP2T"
+		}
+
+		_, err := u.storage.cli.FPutObject(ctx, bucket, targetObject, sourceFile, minio.PutObjectOptions{
+			ContentType: contentType,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+
+// FGetObject tải một object từ MinIO về file local
+func (u *Util) FGetObject(ctx context.Context, bucket, object, filePath string) error {
+    // Gọi trực tiếp từ minio-go client
+    return u.storage.cli.FGetObject(ctx, bucket, object, filePath, minio.GetObjectOptions{})
 }

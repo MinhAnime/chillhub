@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"chillhub/internal/module/media/model"
@@ -9,6 +10,8 @@ import (
 	minioshared "chillhub/internal/shared/minio"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	appErr "chillhub/internal/shared/error"
 )
 
 // MediaServiceInterface định nghĩa các hàm chính của MediaService
@@ -16,11 +19,13 @@ type MediaServiceInterface interface {
 	// InitUpload tạo media record và trả về presigned URL
 	InitUpload(ctx context.Context) (*model.Media, string, error)
 
-	// Create lưu media vào repository và trigger transcoding
-	Create(ctx context.Context, media *model.Media) error
+    CompleteUpload(ctx context.Context, id string) error
 
-	// PresignRawUpload trả về URL presigned PUT (nếu muốn expose riêng)
-	PresignRawUpload(ctx context.Context, object string, expiry time.Duration) (string, error)
+	// Streaming Proxy: stream media và ẩn url của MinIO
+	GetStream(ctx context.Context, bucket, object string) (io.ReadCloser, int64, string, error)
+
+	// GetByID lấy media theo ID
+	GetByID(ctx context.Context, id string) (*model.Media, error)
 }
 
 
@@ -60,7 +65,7 @@ func (s *MediaService) InitUpload(
 
 	media := &model.Media{
 		ID:     id,
-		Status: model.StatusUploading,
+		Status: model.StatusDraft, // Mặc định là draft
 		Raw: model.RawInfo{
 			Bucket: s.rawBucket,
 			Object: object,
@@ -83,6 +88,7 @@ func (s *MediaService) InitUpload(
 	if err := s.minio.EnsureBucket(context.Background(), s.rawBucket); err != nil {
 		panic(err) // fail fast, config lỗi thì app không nên chạy
 	}
+	
 	if err != nil {
 		return nil, "", err
 	}
@@ -90,19 +96,55 @@ func (s *MediaService) InitUpload(
 	return media, url, nil
 }
 
-// Create lưu media và trigger transcoding
-func (s *MediaService) Create(ctx context.Context, media *model.Media) error {
-	if err := s.repo.Insert(ctx, media); err != nil {
-		return err
-	}
+func (s *MediaService) CompleteUpload(ctx context.Context, id string) error {
+    // 1. Kiểm tra Media có tồn tại không
+    media, err := s.GetByID(ctx, id)
+    if err != nil {
+        return err
+    }
 
-	// async transcoding
-	go s.transcoder.Transcode(media)
+    // 2. Kiểm tra nếu đã upload hoặc đang xử lý rồi thì không chạy lại
+    if media.Status != model.StatusDraft {
+        return nil 
+    }
 
-	return nil
+    // 3. Cập nhật trạng thái sang Pending (Chờ xử lý)
+    // Bạn nên dùng UpdateStatus thay vì Insert
+    if err := s.repo.UpdateStatus(ctx, id, model.StatusPending); err != nil {
+        return err
+    }
+
+    // 4. Kích hoạt Transcode chạy ngầm
+    // CHÚ Ý: Ở bản cmd/worker, đoạn này sẽ là đẩy message vào Queue.
+    // Hiện tại chạy chung 1 app thì dùng goroutine.
+    go s.transcoder.Process(media)
+
+    return nil
 }
+
 
 // PresignRawUpload trả về presigned PUT URL cho object
 func (s *MediaService) PresignRawUpload(ctx context.Context, object string, expiry time.Duration) (string, error) {
 	return s.minio.PresignPut(ctx, s.rawBucket, object, expiry)
+}
+
+// GetStream stream media từ MinIO
+func (s *MediaService) GetStream(ctx context.Context, bucket, object string) (io.ReadCloser, int64, string, error) {
+    // Gọi util để lấy object
+    return s.minio.GetObject(ctx, bucket, object)
+}
+
+func (s *MediaService) GetByID(ctx context.Context, id string) (*model.Media, error) {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        // if appErr.GetStatus(err) == http.StatusBadRequest {
+        //     return nil, appErr.ErrBadRequest.WithErr(err, "media.invalid_id")
+        // }
+        
+        // Trả về lỗi 500 mẫu, NHƯNG đính kèm lỗi thật từ Mongo để GEH log ra
+        return nil, appErr.ErrBadRequest.WithErr(err)
+    }
+
+    // Gọi vào repository để lấy data
+    return s.repo.FindByID(ctx, objID)
 }
