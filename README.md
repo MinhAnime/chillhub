@@ -282,32 +282,32 @@ Install chillhub using one of the following methods:
 
 1. Clone the chillhub repository:
 ```sh
-❯ git clone https://github.com/jukistricker/chillhub
+ git clone https://github.com/jukistricker/chillhub
 ```
 
 2. Navigate to the project directory:
 ```sh
-❯ cd chillhub
+ cd chillhub
 ```
 
 **Using `docker` to setup environment:** &nbsp; [<img align="center" src="https://img.shields.io/badge/Docker-2CA5E0.svg?style={badge_style}&logo=docker&logoColor=white" />](https://www.docker.com/)
 
 ```sh
-❯ docker compose -f docker-compose.dev.yml up -d
+ docker compose -f docker-compose.dev.yml up -d
 ```
 
 3. Install the project dependencies:
 
 **Navigate to the project directory:**
 ```sh
-❯ cd .\cmd\main\
+ cd .\cmd\main\
 ```
 
 
 **Using `go modules`** &nbsp; [<img align="center" src="https://img.shields.io/badge/Go-00ADD8.svg?style={badge_style}&logo=go&logoColor=white" />](https://golang.org/)
 
 ```sh
-❯ go build .
+ go build .
 ```
 
 ###  Usage
@@ -315,7 +315,7 @@ Run chillhub using the following command:
 **Using `go modules`** &nbsp; [<img align="center" src="https://img.shields.io/badge/Go-00ADD8.svg?style={badge_style}&logo=go&logoColor=white" />](https://golang.org/)
 
 ```sh
-❯ go run .
+ go run .
 ```
 
 ###  Testing
@@ -323,7 +323,7 @@ Run the test suite using the following command:
 **Using `go modules`** &nbsp; [<img align="center" src="https://img.shields.io/badge/Go-00ADD8.svg?style={badge_style}&logo=go&logoColor=white" />](https://golang.org/)
 
 ```sh
-❯ go test ./...
+ go test ./...
 ```
 
 
