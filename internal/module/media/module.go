@@ -5,10 +5,12 @@ import (
 	"chillhub/internal/module/media/repository"
 	"chillhub/internal/module/media/service"
 	minioshared "chillhub/internal/shared/minio"
+	"os"
 )
 
 // Module chứa handler để đăng ký route
-const rawBucket = "raw-media-bucket" // mỗi module quản lý bucket riêng
+var rawBucket = os.Getenv("BUCKET_MEDIA") // mỗi module quản lý bucket riêng
+
 
 type Module struct {
 	Handler *handler.MediaHandler

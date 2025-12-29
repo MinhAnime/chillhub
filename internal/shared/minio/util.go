@@ -118,6 +118,7 @@ func (u *Util) PresignPut(
 	expiry time.Duration,
 ) (string, error) {
 
+	print(bucket)
 	url, err := u.storage.cli.PresignedPutObject(
 		ctx,
 		bucket,
@@ -148,20 +149,6 @@ func (u *Util) EnsureBucket(
 
 	if exists {
 		return nil
-	}
-
-	err = u.storage.cli.MakeBucket(ctx, bucket, minio.MakeBucketOptions{
-		// Region: "us-east-1", // chỉ bật nếu dùng AWS S3
-	})
-	if err != nil {
-
-		// Trường hợp bucket vừa được tạo bởi process khác
-		exists, checkErr := u.storage.cli.BucketExists(ctx, bucket)
-		if checkErr == nil && exists {
-			return nil
-		}
-
-		return appErr.ErrInternal.WithErr(err, "minio.bucket.create.failed")
 	}
 
 	return nil
