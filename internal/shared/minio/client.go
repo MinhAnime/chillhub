@@ -22,7 +22,6 @@ func NewClient(
 		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
 		Secure: useSSL,
 	})
-	print("NewClient:", endpoint, accessKey, secretKey, useSSL, baseURL)
 	if err != nil {
 		return nil, err
 	}

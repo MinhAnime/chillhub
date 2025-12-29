@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"io"
+	"os"
 	"time"
 
 	"chillhub/internal/module/media/model"
@@ -13,6 +14,8 @@ import (
 
 	appErr "chillhub/internal/shared/error"
 )
+
+var mediaFolder = os.Getenv("MEDIA_FOLDER")
 
 // MediaServiceInterface định nghĩa các hàm chính của MediaService
 type MediaServiceInterface interface {
@@ -59,9 +62,12 @@ func (s *MediaService) InitUpload(
 ) (*model.Media, string, error) {
 
 	id := primitive.NewObjectID()
-	object := "raw/" + id.Hex() // không cần extension, FE sẽ gắn extension
+	object := mediaFolder + id.Hex() // không cần extension, FE sẽ gắn extension
 
 	print("Tại InitUpload: ",s.rawBucket)
+	if err := s.minio.EnsureBucket(context.Background(), s.rawBucket); err != nil {
+		panic(err) // fail fast, config lỗi thì app không nên chạy
+	}
 
 	media := &model.Media{
 		ID:     id,
@@ -84,10 +90,6 @@ func (s *MediaService) InitUpload(
 		object,
 		15*time.Minute,
 	)
-
-	if err := s.minio.EnsureBucket(context.Background(), s.rawBucket); err != nil {
-		panic(err) // fail fast, config lỗi thì app không nên chạy
-	}
 	
 	if err != nil {
 		return nil, "", err
