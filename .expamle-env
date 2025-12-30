@@ -1,20 +1,31 @@
 APP_PORT=8080
 APP_ENV=development
 
-
-#MongoDB(local)
-MONGO_URI=mongodb://khô gà đè tem:27018
+#MongoDB(server)
+MONGO_URI=mongodb://phải gì:phải chịuuu@honhh pé ơii:27017/
 MONGO_DB=chillhub
-MONGO_PORT=27018
+MONGO_PORT=27017
+MONGO_USER=phải gì
+MONGO_PASSWORD=phải chịuuu
 
-#MinIO(local)
-MINIO_ENDPOINT=ộ ii:9001
-MINIO_PORT=9001
-MINIO_CONSOLE_PORT=9002
+#MinIO(server)
+MINIO_ENDPOINT=khôm làm mà đòi có ăn
+MINIO_CONSOLE_URL=con chó cao bằng bộ pc
 MINIO_ACCESS_KEY=hdpe
-MINIO_SECRET_KEY=là ngon luôn
+MINIO_SECRET_KEY=thì ngon luôn
 MINIO_BUCKET_RAW=raw
 MINIO_BUCKET_HLS=hls
-MINIO_USE_SSL=false
-MINIO_BASE_URL=http://con chó cao bằng ộ ii:9001
+MINIO_USE_SSL=true
+MINIO_BASE_URL=có làm thì mới có ăn
 
+#PostgreSQL(server)
+POSTGRES_HOST=thì ăn bòi
+POSTGRES_PORT=5432
+POSTGRES_DB=chillhub
+POSTGRES_USER=ộ ii
+POSTGRES_PASSWORD=khô gà đè tem
+POSTGRES_URL=postgresql://thì ăn bòi:5432/chillhub
+
+#module bucket
+BUCKET_MEDIA=đoán xem
+MEDIA_FOLDER=đoán xem/
